@@ -36,6 +36,12 @@ public class Board
     List<Board>? _movesForX;
     List<Board>? _movesForO;
 
+    /// <summary>
+    /// Computer plays a move for the given player.
+    /// </summary>
+    /// <param name="player"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public Board Move(Player player)
     {
         if (_move != null) 
@@ -64,6 +70,22 @@ public class Board
         
         // remove from available moves
         moves.Remove(_move);
+
+        return _move;
+    }
+
+    public Board Move(Player player, int position)
+    {
+        if (position < 0 || position >= Boxes)
+            throw new Exception("Invalid position");
+
+        if (_grid[position] != Player.Empty)
+            throw new Exception("Position already taken");
+
+        Player[] newGrid = [.._grid];
+        newGrid[position] = player;
+
+        _move = new Board(newGrid);
 
         return _move;
     }
