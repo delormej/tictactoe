@@ -1,7 +1,11 @@
-public class Board
+
+public class Board : IEquatable<Board>
 {
     const int Boxes = 9; 
 
+    // All possible boards
+
+    // All possible win vectors
     static readonly int[,] WinVectors = new [,]
     { 
         // horizontal
@@ -26,6 +30,8 @@ public class Board
         _random = new();
         _isWin = CalculateIsWin();
         _isDraw = CalculateIsDraw();
+        // _movesForX = GetAvailableMoves(Player.X).ToList();
+        // _movesForO = GetAvailableMoves(Player.O).ToList();
     }
 
     Board? _move;
@@ -44,23 +50,16 @@ public class Board
     /// <exception cref="Exception"></exception>
     public Board Move(Player player)
     {
-        if (_move != null) 
-            throw new Exception("Move already played");
-
         if (IsGameOver)
             throw new Exception("Game is over");
 
-        if (_movesForX == null)
-            _movesForX = GetAvailableMoves(Player.X).ToList();
-        if (_movesForO == null)            
-            _movesForO = GetAvailableMoves(Player.O).ToList();
-
         _player = player;
 
+        LoadMoves();
         // get a random, available move
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
-        if (moves.Count == 0)
+        if (moves == null || moves.Count == 0)
         {
             // Ran out of moves, reset.
             moves = GetAvailableMoves(player).ToList();
@@ -85,9 +84,18 @@ public class Board
         Player[] newGrid = [.._grid];
         newGrid[position] = player;
 
-        _move = new Board(newGrid);
+        _player = player;
+        _move = GetBoard(newGrid);
 
         return _move;
+    }
+
+    public void LoadMoves()
+    {
+        if (_movesForX == null)
+            _movesForX = GetAvailableMoves(Player.X).ToList();
+        if (_movesForO == null)            
+            _movesForO = GetAvailableMoves(Player.O).ToList();
     }
 
     public bool IsGameOver => IsWin || IsDraw;
@@ -110,8 +118,8 @@ public class Board
         // Add 2 for a Win, 1 for a Draw, 0 for a Loss
         int count = IsWin ? 2 : (IsDraw ? 1 : 0);
 
-        // Don't learn for Player O
-        if (_player == Player.O) count = 1;
+        if (moves == null)
+            moves = new();
 
         for (int i = 0; i < count; i++)
         {
@@ -163,9 +171,22 @@ public class Board
                 // Change the player at that cell
                 newGrid[i] = player;
 
-                yield return new Board(newGrid);
+                yield return GetBoard(newGrid);
             }
         }
+    }
+
+    private Board GetBoard(Player[] newGrid)
+    {
+        var board = BoardRegistry.Find(newGrid);
+
+        if (board == null)
+        {
+            board = new Board(newGrid);
+            BoardRegistry.Add(board);
+        }
+
+        return board;
     }
 
     public void Render()
@@ -184,5 +205,42 @@ public class Board
         if (p == Player.X) return "X";
         else if (p == Player.O) return "O";
         else return " ";        
+    }
+
+    public bool Equals(Board? board)
+    {
+        if (board == null)
+            return false;
+
+        return Equals(board._grid);
+    }
+
+    public bool Equals(Player[]? other)
+    {
+        if (other == null)
+            return false;
+
+        return _grid.SequenceEqual(other);
+    }
+}
+
+// Create a registry of unique boards.
+public static class BoardRegistry 
+{
+    private static readonly HashSet<Board> _boards = new();
+
+    // Find an existing board by grid
+    public static Board? Find(Player[] grid)
+    {
+        var board = _boards.FirstOrDefault(b => b.Equals(grid));
+        if (board == null)
+            Console.WriteLine("Board not found");
+        return board;
+    }
+
+    public static bool Add(Board board)
+    {
+        Console.WriteLine($"Adding board {_boards.Count()}");
+        return _boards.Add(board);
     }
 }

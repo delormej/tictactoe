@@ -21,6 +21,21 @@ public class Game
 
         var move = _board.Move(player);
         
+        return Move(player, move);
+    }
+
+    public Board Move(Player player, int position)
+    {
+        if (IsGameOver)
+            throw new Exception("Game is over");
+
+        var move = _board.Move(player, position);
+        
+        return Move(player, move);
+    }
+
+    private Board Move(Player player, Board move)
+    {
         if (move.IsGameOver)
         {
             IsGameOver = true;
