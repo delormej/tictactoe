@@ -14,12 +14,21 @@ public class Game
     public Player Winner => _winner;
     public bool IsGameOver = false;
 
-    public void Move(Player player)
+    public void Move(Player player, int? position = null)
     {
         if (IsGameOver)
             throw new Exception("Game is over");
 
-        var move = _board.Move(player);
+        Board? move;
+
+        if (position != null)
+        {
+            move = _board.Move(player, (int)position);
+        }
+        else
+        {
+            move = _board.Move(player);
+        }
         
         if (move == null || move.IsGameOver)
         {
@@ -44,15 +53,19 @@ public class Game
     {
         _moves.ForEach(m => 
         {
-            if (_board.IsDraw)
+            // Only teach the computer.
+            if (player == Player.O)
             {
-                m.Record(false);
+                if (_board.IsDraw)
+                {
+                    m.Record(false);
+                }
+                else if (_winner == player && m.PlayedBy == player)
+                {
+                    m.Record(true);
+                }
             }
-            else if (_winner == player && m.PlayedBy == player)
-            {
-                m.Record(true);
-            }
-
+            
             m.ClearMove();
         });
     }

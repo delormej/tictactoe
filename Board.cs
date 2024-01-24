@@ -94,17 +94,35 @@ public class Board
 
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
-        // Don't create a new object, find existing.
+        Console.WriteLine($"X, O have {_movesForX!.Count()}, {_movesForO!.Count()} available moves.");
+
+        // Find existing move
+        // TODO: break this out as a standalone function
+        bool match = false;
+
         foreach (var move in moves!)
         {
-            if (move._grid.SequenceEqual(newGrid))
+            for(int i = 0; i < Boxes; i++)
             {
-                _move = move;
-                return _move;
+                match = move._grid[i] == newGrid[i];
+                
+                if (!match)
+                    break;
             }
+
+            if (!match)
+                continue;
+
+            _move = move;
+            return _move;
         }
         
-        return null;
+        // In interactive move, if the learned model doesn't have the move you
+        // want to make, just create it here and add it.
+        _move = new Board(newGrid);
+        moves.Add(_move);
+
+        return _move;
     }
 
     public bool IsGameOver => IsWin || IsDraw;
