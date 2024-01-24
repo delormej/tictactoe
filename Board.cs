@@ -42,7 +42,7 @@ public class Board
     /// <param name="player"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public Board Move(Player player)
+    public Board? Move(Player player)
     {
         if (_move != null) 
             throw new Exception("Move already played");
@@ -50,22 +50,19 @@ public class Board
         if (IsGameOver)
             throw new Exception("Game is over");
 
-        if (_movesForX == null)
-            _movesForX = GetAvailableMoves(Player.X).ToList();
-        if (_movesForO == null)            
-            _movesForO = GetAvailableMoves(Player.O).ToList();
-
         _player = player;
 
-        // get a random, available move
+        LoadMoves();
+
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
-        if (moves.Count == 0)
+        if (moves!.Count == 0)
         {
-            // Ran out of moves, reset.
-            moves = GetAvailableMoves(player).ToList();
+            // Ran out of moves, game is over.
+            return null;
         }
 
+        // Save the move so that we can record win or draw.
         _move = moves[_random.Next(0, moves.Count)];
         
         // remove from available moves
@@ -74,8 +71,16 @@ public class Board
         return _move;
     }
 
-    public Board Move(Player player, int position)
+    /// <summary>
+    /// Player plays a move at the given position.
+    /// </summary>
+    /// <param name="player"></param>
+    /// <param name="position"></param>
+    /// <returns>Board with the new move or null if invalid.</returns>
+    public Board? Move(Player player, int position)
     {
+        _player = player;
+
         if (position < 0 || position >= Boxes)
             throw new Exception("Invalid position");
 
@@ -85,9 +90,21 @@ public class Board
         Player[] newGrid = [.._grid];
         newGrid[position] = player;
 
-        _move = new Board(newGrid);
+        LoadMoves();
 
-        return _move;
+        var moves = _player == Player.X ? _movesForX : _movesForO;
+
+        // Don't create a new object, find existing.
+        foreach (var move in moves!)
+        {
+            if (move._grid.SequenceEqual(newGrid))
+            {
+                _move = move;
+                return _move;
+            }
+        }
+        
+        return null;
     }
 
     public bool IsGameOver => IsWin || IsDraw;
@@ -96,30 +113,54 @@ public class Board
 
     public bool IsDraw => _isDraw;
 
+    public Player? PlayedBy => _player;
+
     /// <summary>
     /// Reinforces wins & draws, and penalizes losses.
     /// </summary>
     /// <exception cref="Exception">Move not played yet</exception>
-    public void Learn()
+    public void Record(bool isWin)
     {
         if (_move == null)
-            throw new Exception("Move not played");
+        {
+            Console.WriteLine($"Move not played! {this.GetHashCode()}");
+
+            return;
+            // throw new Exception("Move not played");
+        }
 
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
+        if (moves == null)
+            throw new Exception("No available moves");
+
         // Add 2 for a Win, 1 for a Draw, 0 for a Loss
-        int count = IsWin ? 2 : (IsDraw ? 1 : 0);
+        int count = isWin ? 2 : 1;
 
         // Don't learn for Player O
-        if (_player == Player.O) count = 1;
+        // if (_player == Player.O) count = 1;
 
         for (int i = 0; i < count; i++)
         {
             moves.Add(_move);
         }
 
+        Console.WriteLine($"Learned {count} moves for {_player}");
+    }
+
+    public void ClearMove()
+    {
         // Clear the move for the next learning opportunity.
         _move = null;
+        _player = null;
+    }
+
+    private void LoadMoves()
+    {
+        if (_movesForX == null)
+            _movesForX = GetAvailableMoves(Player.X).ToList();
+        if (_movesForO == null)            
+            _movesForO = GetAvailableMoves(Player.O).ToList();        
     }
 
     /// <summary>

@@ -1,6 +1,9 @@
 ﻿Player player = Player.O;
 
-const int TrainingRuns = 500;
+const int TrainingRuns = 15;
+
+Console.WriteLine("Press any key to start...");
+Console.ReadKey();
 
 Console.WriteLine("Training...");
 Train();
@@ -27,12 +30,7 @@ Game Play()
         game.Move(player);
     }
     
-    if (game.Winner == Player.Empty) 
-        Console.WriteLine("Draw!");
-    else
-        Console.WriteLine($"Player {game.Winner} wins!");
-    
-    game.Render();
+    RenderWinner(game);
 
     return game;
 }
@@ -41,12 +39,16 @@ void Train()
 {
     for (int i = 0; i < TrainingRuns; i++)
     {
-        Game game = new();
-        while (!game.IsGameOver)
-        {
-            // Alternate player
-            player = (Player)((int)player *-1);
-            game.Move(player);
-        }
+        Play();
     }
+}
+
+void RenderWinner(Game game)
+{
+    if (game.Winner == Player.Empty) 
+        Console.WriteLine("Draw!");
+    else
+        Console.WriteLine($"Player {game.Winner} wins!");
+    
+    game.Render();
 }

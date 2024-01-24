@@ -14,30 +14,47 @@ public class Game
     public Player Winner => _winner;
     public bool IsGameOver = false;
 
-    public Board Move(Player player)
+    public void Move(Player player)
     {
         if (IsGameOver)
             throw new Exception("Game is over");
 
         var move = _board.Move(player);
         
-        if (move.IsGameOver)
+        if (move == null || move.IsGameOver)
         {
             IsGameOver = true;
-            _moves.ForEach(move => move.Learn());
-
-            if (move.IsWin)
+            
+            if (move?.IsWin ?? false)
                 _winner = player;
+
+            Learn(player);
         }
 
-        _moves.Add(move);
-
-        return move;
+        if (move != null)
+            _moves.Add(move);
     }
 
     public void Render()
     {
         _board.Render();
+    }
+
+    private void Learn(Player player)
+    {
+        _moves.ForEach(m => 
+        {
+            if (_board.IsDraw)
+            {
+                m.Record(false);
+            }
+            else if (_winner == player && m.PlayedBy == player)
+            {
+                m.Record(true);
+            }
+
+            m.ClearMove();
+        });
     }
 }
 
