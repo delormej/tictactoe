@@ -56,6 +56,8 @@ public class Board
 
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
+        Console.WriteLine($"Player {player}, Moves: {moves!.Count()} Board Instance: {this.GetHashCode()}");
+
         if (moves!.Count == 0)
         {
             // Ran out of moves, game is over.
@@ -94,33 +96,14 @@ public class Board
 
         var moves = _player == Player.X ? _movesForX : _movesForO;
 
-        Console.WriteLine($"X, O have {_movesForX!.Count()}, {_movesForO!.Count()} available moves.");
-
-        // Find existing move
-        // TODO: break this out as a standalone function
-        bool match = false;
-
-        foreach (var move in moves!)
-        {
-            for(int i = 0; i < Boxes; i++)
-            {
-                match = move._grid[i] == newGrid[i];
-                
-                if (!match)
-                    break;
-            }
-
-            if (!match)
-                continue;
-
-            _move = move;
-            return _move;
+        _move = FindMove(moves!, newGrid);
+        if (_move == null)
+        {  
+            // In interactive move, if the learned model doesn't have the move you
+            // want to make, just create it here and add it.
+            _move = new Board(newGrid);
+            moves!.Add(_move);
         }
-        
-        // In interactive move, if the learned model doesn't have the move you
-        // want to make, just create it here and add it.
-        _move = new Board(newGrid);
-        moves.Add(_move);
 
         return _move;
     }
@@ -180,6 +163,31 @@ public class Board
         if (_movesForO == null)            
             _movesForO = GetAvailableMoves(Player.O).ToList();        
     }
+
+    private Board? FindMove(IEnumerable<Board> moves, Player[] newGrid)
+    {
+        // Find existing move
+        // TODO: break this out as a standalone function
+        bool match = false;
+
+        foreach (var move in moves!)
+        {
+            for(int i = 0; i < Boxes; i++)
+            {
+                match = move._grid[i] == newGrid[i];
+                
+                if (!match)
+                    break;
+            }
+
+            if (!match)
+                continue;
+
+            return move;
+        }
+
+        return null;
+    }    
 
     /// <summary>
     /// Checks each potential win vector; horizontal, vertical, diagnol.

@@ -1,6 +1,6 @@
 ﻿Player player = Player.O;
 
-const int TrainingRuns = 500;
+const int TrainingRuns = 20;
 
 Console.WriteLine("Press any key to start...");
 Console.ReadKey();
